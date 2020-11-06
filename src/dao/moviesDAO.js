@@ -54,6 +54,10 @@ export default class MoviesDAO {
     match one or more values of a specific field.
     */
 
+/***************** Ticket: Projection **************************/
+    let us_query = {"countries": { $in: countries }};
+    let us_projection = { title: 1 };
+
     let cursor
     try {
       // TODO Ticket: Projection
@@ -61,7 +65,8 @@ export default class MoviesDAO {
       // and _id. Do not put a limit in your own implementation, the limit
       // here is only included to avoid sending 46000 documents down the
       // wire.
-      cursor = await movies.find().limit(1)
+
+      cursor = await movies.find(us_query).project(us_projection) //.limit(1)
     } catch (e) {
       console.error(`Unable to issue find command, ${e}`)
       return []
@@ -114,10 +119,11 @@ export default class MoviesDAO {
 
     const searchGenre = Array.isArray(genre) ? genre : genre.split(", ")
 
+/************** Ticket: Text and Subfield Search ****************/
     // TODO Ticket: Text and Subfield Search
     // Construct a query that will search for the chosen genre.
-    const query = {}
-    const project = {}
+    const query = { "genres": { $in: searchGenre } }
+    const project = { }
     const sort = DEFAULT_SORT
 
     return { query, project, sort }
@@ -190,12 +196,15 @@ export default class MoviesDAO {
     The queryPipeline is a Javascript array, so you can use push() or concat()
     to complete this task, but you might have to do something about `const`.
     */
-
+/***************** Ticket: Faceted Search **************************/
     const queryPipeline = [
       matchStage,
       sortStage,
       // TODO Ticket: Faceted Search
       // Add the stages to queryPipeline in the correct order.
+      skipStage,
+      limitStage,
+      facetStage 
     ]
 
     try {
@@ -257,9 +266,10 @@ export default class MoviesDAO {
     Paging can be implemented by using the skip() and limit() cursor methods.
     */
 
+/******************* Ticket: Paging ************************************/
     // TODO Ticket: Paging
     // Use the cursor to only return the movies that belong on the current page
-    const displayCursor = cursor.limit(moviesPerPage)
+    const displayCursor = cursor.limit(moviesPerPage).skip(moviesPerPage * page)
 
     try {
       const moviesList = await displayCursor.toArray()
